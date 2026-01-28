@@ -19,11 +19,17 @@ export default function ErrorBanner({ message, onRetry }) {
     if (msg.includes('timeout') || msg.includes('time out')) {
       return "Request timed out. Please try again."
     }
+    if (msg.includes('503') || msg.includes('overloaded') || msg.includes('unavailable')) {
+      return "The service is temporarily busy. Please wait a moment and try again."
+    }
     if (msg.includes('500') || msg.includes('internal server')) {
       return "Server error. Please try again in a moment."
     }
     if (msg.includes('404') || msg.includes('not found')) {
       return "Service temporarily unavailable. Please try again."
+    }
+    if (msg.includes('429') || msg.includes('rate limit')) {
+      return "Too many requests. Please wait a moment and try again."
     }
     if (msg.includes('photo') || msg.includes('image')) {
       return "Image processing error. Please upload a different photo."
