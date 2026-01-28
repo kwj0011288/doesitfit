@@ -34,7 +34,7 @@ export default function LandingPage() {
             <div className="text-center mb-24">
               <div className="mb-8">
                 {/* Discount Pill with Code */}
-                <div className="mb-6 flex justify-center">
+                {/* <div className="mb-6 flex justify-center">
                   <button
                     onClick={handleCopy}
                     className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-md text-gray-900 text-sm font-semibold shadow-lg hover:shadow-xl border border-gray-200/50 transition-all group"
@@ -50,7 +50,7 @@ export default function LandingPage() {
                       <Copy className="w-4 h-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
                     )}
                   </button>
-                </div>
+                </div> */}
 
                 <h1 className="text-7xl md:text-8xl lg:text-9xl font-display font-bold tracking-tight mb-8 text-gray-900 leading-none">
                   Does it Fit?

@@ -1,5 +1,5 @@
 import { useLocation, Navigate, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import SEO from '../components/SEO'
 
 // You can add your key in .env as VITE_UNSPLASH_ACCESS_KEY
@@ -18,45 +18,91 @@ export default function ResultPage() {
     } catch { return null }
   })
 
-  // State to store real Unsplash image DATA (url + credit)
-  // format: { "query": { url: string, user: { name: string, link: string } } }
+  // State to store real Unsplash image DATA
+  // format: { [key]: { url: string, user: { name: string, link: string } } }
   const [imageData, setImageData] = useState({})
 
-  // 2. Async Image Fetching (Strict Unsplash API + Attribution)
+  // Build query functions using new schema fields
+  const buildOutfitQuery = (outfit, gender) => {
+    const g = gender ? `${gender} ` : ''
+    const tags = outfit?.diversity_tags || {}
+    // Use diversity_tags for more stable and diverse queries
+    return `${g}${tags.formality || ''} ${tags.silhouette || ''} outfit ${tags.color_family || ''} ${tags.shoe_type || ''}`.trim()
+  }
+
+  const buildItemQuery = (item, gender) => {
+    const g = gender ? `${gender} ` : ''
+    // category is now required in backend schema
+    const base = item?.image_query || item?.name || ''
+    const cat = item?.category ? `${item.category} ` : ''
+    return `${g}${cat}${base}`.trim()
+  }
+
+  const buildHairQuery = (hair, gender) => {
+    const g = gender ? `${gender} ` : ''
+    const t = hair?.traits || {}
+    // Use traits to reduce repetitive results
+    const base = hair?.image_query || hair?.name || 'hairstyle'
+    return `${g}${base} ${t.length || ''} ${t.silhouette || ''} ${t.part || ''} ${t.texture || ''}`.trim()
+  }
+
+  // Query Plan: stable keys based on the updated schema
+  const queryPlan = useMemo(() => {
+    if (!result) return { keys: [], keyToQuery: {} }
+
+    const gender = result.gender || ''
+    const keyToQuery = {}
+    const keys = []
+
+      // Outfits
+      (result.outfits || []).forEach((outfit, i) => {
+        const outfitKey = `outfit:${i}`
+        const outfitQuery = buildOutfitQuery(outfit, gender)
+        keyToQuery[outfitKey] = outfitQuery
+        keys.push(outfitKey)
+
+          // Items
+          (outfit.items || []).forEach((item, j) => {
+            const itemKey = `outfit:${i}:item:${j}:${item?.category || 'item'}`
+            const itemQuery = buildItemQuery(item, gender)
+            keyToQuery[itemKey] = itemQuery
+            keys.push(itemKey)
+          })
+      })
+
+      // Hairstyles
+      (result.hairstyles || []).forEach((hair) => {
+        const idx = hair?.index ?? 0
+        const hairKey = `hair:${idx}`
+        const hairQuery = buildHairQuery(hair, gender)
+        keyToQuery[hairKey] = hairQuery
+        keys.push(hairKey)
+      })
+
+    // Deduplicate keys
+    const uniqueKeys = Array.from(new Set(keys))
+    return { keys: uniqueKeys, keyToQuery }
+  }, [result])
+
+  // 2. Async Image Fetching (Unsplash API)
   useEffect(() => {
     if (!result) return
 
     const fetchImages = async () => {
-      const queries = new Set()
-      const gender = result.gender || '' // Get gender from result
-
-      // Collect queries with gender context
-      result.outfits?.forEach(outfit => {
-        const outfitQuery = gender ? `${gender} ${outfit.title}` : outfit.title
-        queries.add(outfitQuery)
-        outfit.items?.forEach(item => {
-          const itemQuery = gender ? `${gender} ${item.image_query || item.name}` : (item.image_query || item.name)
-          queries.add(itemQuery)
-        })
-      })
-      result.hairstyles?.forEach(hair => {
-        const hairQuery = gender ? `${gender} ${hair.image_query || hair.name}` : (hair.image_query || hair.name)
-        queries.add(hairQuery)
-      })
-
       const newMap = { ...imageData }
-      const promises = Array.from(queries).map(async (query) => {
-        if (newMap[query]) return
 
-        // A. Check for API Key
-        if (!UNSPLASH_ACCESS_KEY || UNSPLASH_ACCESS_KEY.includes('your_unsplash')) {
-          // No key -> Manual Fallback with Mock Credit
-          newMap[query] = getFallbackData(query)
+      const promises = queryPlan.keys.map(async (key) => {
+        if (newMap[key]) return
+
+        const query = queryPlan.keyToQuery[key]
+
+        // No key -> fallback
+        if (!UNSPLASH_ACCESS_KEY || String(UNSPLASH_ACCESS_KEY).includes('your_unsplash')) {
+          newMap[key] = getFallbackData(query)
           return
         }
 
         try {
-          // B. Call Unsplash Search API with gender in query
           const res = await fetch(
             `https://api.unsplash.com/search/photos?page=1&per_page=1&query=${encodeURIComponent(query)}&orientation=portrait`,
             {
@@ -70,24 +116,21 @@ export default function ResultPage() {
             const data = await res.json()
             const photo = data.results?.[0]
             if (photo) {
-              // Store Data for Hotlinking & Attribution
-              newMap[query] = {
-                url: photo.urls.regular, // Hotlinking allowed
+              newMap[key] = {
+                url: photo.urls.regular,
                 user: {
                   name: photo.user.name,
-                  link: photo.user.links.html // Link to photographer profile
+                  link: photo.user.links.html
                 },
-                download_location: photo.links.download_location // Required for tracking (optional implementation)
+                download_location: photo.links.download_location
               }
               return
             }
           }
 
           throw new Error('No results')
-
         } catch (err) {
-          // C. Fallback
-          newMap[query] = getFallbackData(query)
+          newMap[key] = getFallbackData(query)
         }
       })
 
@@ -96,22 +139,29 @@ export default function ResultPage() {
     }
 
     fetchImages()
-  }, [result])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, queryPlan.keys.join('|')])
 
-  // Helper: Curated Fallback Data (URL + Mock Credit)
+  // Helper: Curated Fallback Data
   const getFallbackData = (query) => {
-    const q = query.toLowerCase()
-    // [Keyword, URL, Photographer Name]
+    const q = String(query || '').toLowerCase()
     const dict = [
       ['blazer', 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80', 'Medienstürmer'],
+      ['suit', 'https://images.unsplash.com/photo-1520975958225-2b7e3b3f3c2e?w=600&q=80', 'Hunters Race'],
       ['jacket', 'https://images.unsplash.com/photo-1551028919-ac6635f0e5c9?w=600&q=80', 'Tobias Tullius'],
       ['shirt', 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&q=80', 'Nimble Made'],
       ['jean', 'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?w=600&q=80', 'Jason Leung'],
       ['denim', 'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?w=600&q=80', 'Jason Leung'],
       ['pant', 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=600&q=80', 'Katsiaryna Endruszkiewicz'],
+      ['trouser', 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=600&q=80', 'Katsiaryna Endruszkiewicz'],
       ['sneaker', 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=600&q=80', 'Lefteris kallergis'],
-      ['shoe', 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&q=80', 'Camila Damásio'],
+      ['loafer', 'https://images.unsplash.com/photo-1528701800489-20be9c1f27f9?w=600&q=80', 'Paul Volkmer'],
+      ['boot', 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80', 'Nike'],
+      ['heel', 'https://images.unsplash.com/photo-1528701800489-20be9c1f27f9?w=600&q=80', 'Paul Volkmer'],
+      ['bag', 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&q=80', 'Emma Matthews Digital Content Production'],
+      ['accessory', 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=600&q=80', 'Sarah Dorweiler'],
       ['hair', 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=600&q=80', 'Icons8'],
+      ['hairstyle', 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=600&q=80', 'Icons8'],
     ]
 
     const match = dict.find(([k]) => q.includes(k))
@@ -128,8 +178,8 @@ export default function ResultPage() {
     }
   }
 
-  const getImage = (query) => {
-    return imageData[query] || {
+  const getImageByKey = (key) => {
+    return imageData[key] || {
       url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=100&q=20&blur=2',
       user: null
     }
@@ -153,7 +203,7 @@ export default function ResultPage() {
       <SEO
         title="Your Style Report - Does it Fit?"
         description="View your personalized style report with color analysis, body type assessment, outfit recommendations, and hairstyle suggestions."
-        keywords="style report, fashion report, color analysis report, body type report, hairstyle report, outfit recommendations, style recommendations, fashion recommendations, color recommendations, hairstyle recommendations, personal style report, custom style report, AI style report, style analysis results, fashion analysis results, color analysis results, body type results, hairstyle results, outfit suggestions, style suggestions, fashion suggestions, color suggestions, hairstyle suggestions, best colors for me, best outfits for me, best hairstyles for me, what suits me, what looks good on me, style guide for me, fashion guide for me, color guide for me, hairstyle guide for me"
+        keywords="style report, fashion report, color analysis report, body type report, hairstyle report, outfit recommendations, style recommendations"
         ogUrl="https://doesitfit.dev/result"
       />
 
@@ -204,14 +254,14 @@ export default function ResultPage() {
                     <div className="space-y-1">
                       <span className="text-sm text-[#86868B]">Body Shape</span>
                       <div className="text-3xl font-bold text-[#0071E3]">
-                        {result.analysis?.body_shape || result.body_analysis?.shape || 'Analyzed'}
+                        {result.analysis?.body_shape || 'Analyzed'}
                       </div>
                     </div>
                     <div className="w-px h-12 bg-gray-200 hidden md:block" />
                     <div className="space-y-1">
                       <span className="text-sm text-[#86868B]">Face Shape</span>
                       <div className="text-3xl font-bold text-[#AF52DE]">
-                        {result.analysis?.face_shape || result.face_shape || 'Analyzed'}
+                        {result.analysis?.face_shape || 'Analyzed'}
                       </div>
                     </div>
                   </div>
@@ -220,7 +270,7 @@ export default function ResultPage() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Analysis Notes</h3>
                   <p className="text-[#424245] leading-relaxed text-lg">
-                    {result.analysis?.notes || result.body_analysis?.description}
+                    {result.analysis?.notes}
                   </p>
                 </div>
               </div>
@@ -229,7 +279,7 @@ export default function ResultPage() {
               <div className="bg-[#F5F5F7] rounded-[32px] p-8 md:p-10">
                 <h4 className="text-sm font-bold uppercase tracking-widest text-[#86868B] mb-8">Actionable Styling Rules</h4>
                 <ul className="space-y-5">
-                  {(result.styling_rules || result.body_analysis?.styling_rules)?.map((rule, i) => (
+                  {(result.styling_rules || []).map((rule, i) => (
                     <li key={i} className="text-[#1D1D1F] text-base flex items-start leading-snug">
                       <span className="w-2 h-2 rounded-full bg-black mt-2 mr-4 shrink-0" />
                       {rule}
@@ -254,9 +304,9 @@ export default function ResultPage() {
 
             <div className="space-y-24">
               {result.outfits.map((outfit, i) => {
-                const gender = result.gender || ''
-                const outfitQuery = gender ? `${gender} ${outfit.title}` : outfit.title
-                const mainImg = getImage(outfitQuery)
+                const outfitKey = `outfit:${i}`
+                const mainImg = getImageByKey(outfitKey)
+
                 return (
                   <div key={i} className="flex flex-col lg:flex-row gap-12 items-center">
                     {/* Image Side */}
@@ -284,21 +334,34 @@ export default function ResultPage() {
                         </p>
                       </div>
 
+                      {/* Why it works */}
+                      {outfit.why_it_works && (
+                        <div className="bg-[#F5F5F7] rounded-2xl p-6">
+                          <h4 className="text-sm font-bold uppercase tracking-widest text-[#86868B] mb-2">Why it works</h4>
+                          <p className="text-[#424245] leading-relaxed">
+                            {outfit.why_it_works}
+                          </p>
+                        </div>
+                      )}
+
                       <div>
                         <h4 className="text-sm font-bold uppercase tracking-widest text-[#86868B] mb-4">Key Items</h4>
                         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {outfit.items?.map((item, j) => {
-                            const gender = result.gender || ''
-                            const itemQuery = gender ? `${gender} ${item.image_query || item.name}` : (item.image_query || item.name)
-                            const itemImg = getImage(itemQuery)
+                            const itemKey = `outfit:${i}:item:${j}:${item?.category || 'item'}`
+                            const itemImg = getImageByKey(itemKey)
+
                             return (
                               <li key={j} className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-4 relative overflow-hidden group/item">
                                 <div className="w-16 h-16 rounded-xl bg-gray-100 shrink-0 overflow-hidden relative">
-                                  <img src={itemImg.url} className="w-full h-full object-cover opacity-90" />
+                                  <img src={itemImg.url} alt={item.name} className="w-full h-full object-cover opacity-90" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="font-semibold text-sm truncate">{item.name}</div>
-                                  <div className="text-xs text-[#86868B]">{item.color}</div>
+                                  <div className="text-xs text-[#86868B]">
+                                    {item.color}
+                                    {item.category ? ` · ${item.category}` : ''}
+                                  </div>
 
                                   {/* Mini Credit for items */}
                                   {itemImg.user && (
@@ -359,19 +422,46 @@ export default function ResultPage() {
               {/* Right Side: List */}
               <div className="w-full lg:w-2/3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {result.hairstyles.map((hair, i) => (
-                    <div key={i} className="flex flex-col bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-md transform -translate-y-1">
-                          {hair.index !== undefined ? hair.index : i}
-                        </span>
-                        <h3 className="text-lg font-bold text-[#1D1D1F] leading-tight">{hair.name}</h3>
+                  {result.hairstyles.map((hair, i) => {
+                    const idx = hair?.index ?? i
+                    const hairKey = `hair:${idx}`
+                    const hairImg = getImageByKey(hairKey)
+
+                    return (
+                      <div key={idx} className="flex bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 gap-4">
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-100 shrink-0 relative">
+                          <img
+                            src={hairImg.url}
+                            alt={hair.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs shadow">
+                            {idx}
+                          </div>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold text-[#1D1D1F] leading-tight truncate">
+                            {hair.name}
+                          </h3>
+                          <p className="text-sm text-[#86868B] leading-relaxed mt-1">
+                            {hair.description}
+                          </p>
+
+                          {hairImg.user && (
+                            <a
+                              href={`${hairImg.user.link}?utm_source=style_app&utm_medium=referral`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[10px] text-gray-400 mt-2 inline-block hover:underline truncate"
+                            >
+                              Photo by {hairImg.user.name} on Unsplash
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-[#86868B] leading-relaxed">
-                        {hair.description}
-                      </p>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
 
@@ -380,7 +470,7 @@ export default function ResultPage() {
         )}
 
         <footer className="text-center pt-20 pb-10 border-t border-gray-200 mt-20">
-          <p className="text-[#86868B] text-sm font-medium mb-8">Generated by AI Stylist Pro</p>
+          <p className="text-[#86868B] text-sm font-medium mb-8">Generated by Does it Fit?</p>
           <button
             onClick={() => navigate('/')}
             className="inline-block bg-black text-white px-8 py-3 rounded-full text-base font-medium hover:bg-gray-800 transition-colors"
