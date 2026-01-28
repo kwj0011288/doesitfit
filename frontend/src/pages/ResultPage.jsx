@@ -1,6 +1,18 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation, Navigate } from 'react-router-dom'
 
 export default function ResultPage() {
+  const location = useLocation()
+  
+  // Get data from location state (passed from TryPage)
+  const data = location.state?.result
+
+  // If no data (e.g. user went directly to /result), redirect to Try
+  if (!data) {
+    return <Navigate to="/try" replace />
+  }
+
+  const { result, hair_collage } = data
+
   return (
     <div className="min-h-screen py-12 px-4 bg-white">
       <div className="max-w-container mx-auto">
@@ -17,13 +29,6 @@ export default function ResultPage() {
           </Link>
         </div>
 
-        {/* Mock Notice */}
-        <div className="mb-8 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
-          <p className="text-xs text-yellow-800">
-            <strong>Mock Data</strong> - UI testing only
-          </p>
-        </div>
-
         {/* Main Content */}
         <div className="space-y-12">
           
@@ -31,9 +36,9 @@ export default function ResultPage() {
           <section>
             <h2 className="text-3xl font-bold mb-6">Your Style Profile</h2>
             <div className="space-y-3 text-lg">
-              <p>✓ Balanced proportions work well with structured fits</p>
-              <p>✓ Medium build allows both fitted and relaxed styles</p>
-              <p>✓ Focus on clean lines and quality fabrics</p>
+              {result.summary && result.summary.map((point, i) => (
+                <p key={i}>✓ {point}</p>
+              ))}
             </div>
           </section>
 
@@ -41,67 +46,71 @@ export default function ResultPage() {
           <section>
             <h3 className="text-xl font-semibold mb-4">Your Colors</h3>
             <div className="flex flex-wrap gap-3">
-              <span className="px-4 py-2 bg-gray-900 text-white rounded-full text-sm">Navy</span>
-              <span className="px-4 py-2 bg-gray-700 text-white rounded-full text-sm">Charcoal</span>
-              <span className="px-4 py-2 bg-green-800 text-white rounded-full text-sm">Olive</span>
-              <span className="px-4 py-2 bg-red-900 text-white rounded-full text-sm">Burgundy</span>
-              <span className="px-4 py-2 bg-gray-100 border border-gray-300 rounded-full text-sm">Cream</span>
+              {result.colors && result.colors.best.map((color, i) => (
+                <span key={i} className="px-4 py-2 bg-gray-900 text-white rounded-full text-sm">
+                  {color}
+                </span>
+              ))}
             </div>
           </section>
 
           {/* Top Outfit - Just One */}
-          <section>
-            <h3 className="text-xl font-semibold mb-4">Recommended Outfit</h3>
-            <div className="p-6 border border-border rounded-lg space-y-4 bg-gray-50">
-              <h4 className="font-semibold text-lg">Classic Work Look</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-secondary">Top:</span> White Oxford shirt
-                </div>
-                <div>
-                  <span className="text-secondary">Bottom:</span> Navy chinos
-                </div>
-                <div>
-                  <span className="text-secondary">Shoes:</span> Brown loafers
-                </div>
-                <div>
-                  <span className="text-secondary">Layer:</span> Grey blazer
+          {result.outfits && result.outfits[0] && (
+            <section>
+              <h3 className="text-xl font-semibold mb-4">Recommended Outfit</h3>
+              <div className="p-6 border border-border rounded-lg space-y-4 bg-gray-50">
+                <h4 className="font-semibold text-lg">{result.outfits[0].title}</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {result.outfits[0].items.top && (
+                    <div><span className="text-secondary">Top:</span> {result.outfits[0].items.top}</div>
+                  )}
+                  {result.outfits[0].items.bottom && (
+                    <div><span className="text-secondary">Bottom:</span> {result.outfits[0].items.bottom}</div>
+                  )}
+                  {result.outfits[0].items.shoes && (
+                    <div><span className="text-secondary">Shoes:</span> {result.outfits[0].items.shoes}</div>
+                  )}
+                  {result.outfits[0].items.outerwear && (
+                    <div><span className="text-secondary">Layer:</span> {result.outfits[0].items.outerwear}</div>
+                  )}
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* Quick Tips */}
           <section>
             <h3 className="text-xl font-semibold mb-4">Quick Tips</h3>
             <ul className="space-y-2 text-sm">
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>Invest in well-fitting basics over trendy pieces</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>Neutral colors are your foundation</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>One statement piece per outfit</span>
-              </li>
+              {result.styling_tips && result.styling_tips.slice(0, 3).map((tip, i) => (
+                <li key={i} className="flex items-start">
+                  <span className="mr-2">•</span>
+                  <span>{tip}</span>
+                </li>
+              ))}
             </ul>
           </section>
 
           {/* Hairstyles - Grid Preview */}
           <section>
             <h3 className="text-xl font-semibold mb-4">Hairstyle Options</h3>
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              {['Textured Quiff', 'Side Part', 'Textured Crop', 'Slick Back', 'Messy Fringe', 'Buzz Cut', 'Crew Cut', 'Pompadour', 'Natural Curly'].map((style, idx) => (
-                <div key={idx} className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center border border-border">
-                  <span className="text-xs text-secondary text-center px-2">{style}</span>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-secondary text-center italic">
-              AI will generate real hairstyle images
+            {hair_collage?.base64 && hair_collage.base64 !== 'placeholder' ? (
+               <img 
+                 src={`data:${hair_collage.mime};base64,${hair_collage.base64}`} 
+                 alt="Hairstyle Collage" 
+                 className="w-full rounded-lg border border-border"
+               />
+            ) : (
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                {result.hairstyles && result.hairstyles.slice(0, 9).map((style, idx) => (
+                  <div key={idx} className="aspect-square bg-gray-100 rounded-lg flex flex-col items-center justify-center border border-border p-2">
+                    <span className="text-xs font-medium text-center">{style.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-secondary text-center italic mt-2">
+              Generated by AI Personal Stylist
             </p>
           </section>
 
@@ -110,3 +119,4 @@ export default function ResultPage() {
     </div>
   )
 }
+

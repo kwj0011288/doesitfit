@@ -36,24 +36,14 @@ export default function SuccessPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-red-600">Verification Failed</h1>
-          <p className="text-secondary">{error}</p>
-          <Link to="/" className="inline-block px-6 py-2 border border-border rounded-lg hover:bg-gray-50">
-            Go Home
+      <div className="min-h-screen flex items-center justify-center px-4 bg-white">
+        <div className="max-w-md w-full bg-red-50 p-8 rounded-lg border border-red-100 text-center">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h1 className="text-xl font-bold text-red-800 mb-2">Verification Failed</h1>
+          <p className="text-red-600 mb-6">{error}</p>
+          <Link to="/" className="text-sm text-red-700 hover:underline">
+            Return Home
           </Link>
-        </div>
-      </div>
-    )
-  }
-
-  if (!verified) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-black rounded-full mx-auto mb-4"></div>
-          <p className="text-secondary">Verifying your purchase...</p>
         </div>
       </div>
     )
@@ -62,31 +52,33 @@ export default function SuccessPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-white">
       <div className="max-w-container w-full text-center space-y-8">
-        {/* Success Icon */}
-        <div className="text-6xl">✓</div>
-
-        {/* Message */}
-        <div className="space-y-4">
-          <h1 className="text-4xl font-bold">Payment Successful!</h1>
-          <p className="text-xl text-secondary">
-            Thank you for your purchase. You now have one-time access to AI Personal Stylist.
-          </p>
-        </div>
-
-        {/* CTA */}
-        <div className="pt-8">
-          <Link
-            to="/try"
-            className="inline-block bg-primary text-white px-12 py-4 rounded-lg text-lg font-medium hover:bg-gray-800"
-          >
-            Get Your Style Report
-          </Link>
-        </div>
-
-        {/* Note */}
-        <p className="text-sm text-secondary">
-          You can generate one report with this purchase
-        </p>
+        {verified ? (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center space-y-4 max-w-2xl mx-auto">
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-3xl font-bold text-green-800">Payment Successful!</h2>
+            <p className="text-xl text-green-700">
+              Your access has been verified. You can now generate your style report.
+            </p>
+            
+            <div className="pt-8">
+              <Link
+                to="/try"
+                className="inline-block bg-primary text-white px-12 py-4 rounded-lg text-lg font-medium hover:bg-gray-800 transform transition hover:scale-105"
+              >
+                Generate My Report
+              </Link>
+            </div>
+            
+            <p className="text-sm text-green-800/60 font-mono mt-4">
+              ID: {checkoutId?.slice(0, 8)}...
+            </p>
+          </div>
+        ) : (
+          <div className="text-center space-y-4">
+            <div className="animate-spin text-4xl">⏳</div>
+            <p className="text-xl text-secondary">Verifying your purchase...</p>
+          </div>
+        )}
       </div>
     </div>
   )
