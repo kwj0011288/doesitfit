@@ -1,9 +1,24 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Copy, Check } from 'lucide-react'
 import Footer from '../components/Footer'
 import { SnowBackground } from '../components/ui/snow'
 import SEO from '../components/SEO'
 
 export default function LandingPage() {
+  const [copied, setCopied] = useState(false)
+  const discountCode = 'WELCOMETODOESITFIT'
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(discountCode)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
   return (
     <SnowBackground>
       <SEO
@@ -18,6 +33,25 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-24">
               <div className="mb-8">
+                {/* Discount Pill with Code */}
+                <div className="mb-6 flex justify-center">
+                  <button
+                    onClick={handleCopy}
+                    className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-md text-gray-900 text-sm font-semibold shadow-lg hover:shadow-xl border border-gray-200/50 transition-all group"
+                  >
+                    <span>First 1 Month Discount</span>
+                    <span className="w-px h-4 bg-gray-300"></span>
+                    <code className="text-sm font-mono font-bold tracking-wider text-gray-900">
+                      {discountCode}
+                    </code>
+                    {copied ? (
+                      <Check className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
+                    )}
+                  </button>
+                </div>
+
                 <h1 className="text-7xl md:text-8xl lg:text-9xl font-display font-bold tracking-tight mb-8 text-gray-900 leading-none">
                   Does it Fit?
                 </h1>
