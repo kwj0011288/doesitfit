@@ -1,0 +1,23 @@
+# Supabase Project ID
+project_id = "glafafbiazbewfjhmbes"
+
+[api]
+enabled = true
+port = 54321
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+# Functions config
+[functions.generate]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.verify-purchase]
+verify_jwt = false
