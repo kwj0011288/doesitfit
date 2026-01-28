@@ -28,14 +28,20 @@ export default function ResultPage() {
 
     const fetchImages = async () => {
       const queries = new Set()
+      const gender = result.gender || '' // Get gender from result
 
-      // Collect queries
+      // Collect queries with gender context
       result.outfits?.forEach(outfit => {
-        queries.add(outfit.title)
-        outfit.items?.forEach(item => queries.add(item.image_query || item.name))
+        const outfitQuery = gender ? `${gender} ${outfit.title}` : outfit.title
+        queries.add(outfitQuery)
+        outfit.items?.forEach(item => {
+          const itemQuery = gender ? `${gender} ${item.image_query || item.name}` : (item.image_query || item.name)
+          queries.add(itemQuery)
+        })
       })
       result.hairstyles?.forEach(hair => {
-        queries.add(hair.image_query || hair.name)
+        const hairQuery = gender ? `${gender} ${hair.image_query || hair.name}` : (hair.image_query || hair.name)
+        queries.add(hairQuery)
       })
 
       const newMap = { ...imageData }
@@ -50,7 +56,7 @@ export default function ResultPage() {
         }
 
         try {
-          // B. Call Unsplash Search API
+          // B. Call Unsplash Search API with gender in query
           const res = await fetch(
             `https://api.unsplash.com/search/photos?page=1&per_page=1&query=${encodeURIComponent(query)}&orientation=portrait`,
             {
@@ -256,7 +262,9 @@ export default function ResultPage() {
 
             <div className="space-y-24">
               {result.outfits.map((outfit, i) => {
-                const mainImg = getImage(outfit.title)
+                const gender = result.gender || ''
+                const outfitQuery = gender ? `${gender} ${outfit.title}` : outfit.title
+                const mainImg = getImage(outfitQuery)
                 return (
                   <div key={i} className="flex flex-col lg:flex-row gap-12 items-center">
                     {/* Image Side */}
@@ -288,7 +296,9 @@ export default function ResultPage() {
                         <h4 className="text-sm font-bold uppercase tracking-widest text-[#86868B] mb-4">Key Items</h4>
                         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {outfit.items?.map((item, j) => {
-                            const itemImg = getImage(item.image_query || item.name)
+                            const gender = result.gender || ''
+                            const itemQuery = gender ? `${gender} ${item.image_query || item.name}` : (item.image_query || item.name)
+                            const itemImg = getImage(itemQuery)
                             return (
                               <li key={j} className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-4 relative overflow-hidden group/item">
                                 <div className="w-16 h-16 rounded-xl bg-gray-100 shrink-0 overflow-hidden relative">

@@ -30,6 +30,7 @@ export default function TryPage() {
         // Save other fields
         const formState = {
           height_cm: formData.get('height_cm'),
+          gender: formData.get('gender'),
           occasion: formData.get('occasion'),
           weight_kg: formData.get('weight_kg'),
           style_vibe: formData.get('style_vibe'),

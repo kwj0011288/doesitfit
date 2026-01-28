@@ -61,6 +61,7 @@ export default function SuccessPage() {
         formData.append('photo', file)
         formData.append('checkout_id', checkoutId)
         formData.append('height_cm', formDataObj.height_cm)
+        formData.append('gender', formDataObj.gender)
         formData.append('occasion', formDataObj.occasion)
         if (formDataObj.weight_kg) formData.append('weight_kg', formDataObj.weight_kg)
         if (formDataObj.style_vibe) formData.append('style_vibe', formDataObj.style_vibe)

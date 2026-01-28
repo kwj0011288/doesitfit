@@ -3,9 +3,19 @@ import { useState } from 'react'
 export default function TryForm({ onSubmit }) {
   const [photo, setPhoto] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
-  const [height, setHeight] = useState('')
+  const [unitSystem, setUnitSystem] = useState('metric') // 'metric' or 'imperial'
+
+  // Metric units
+  const [heightCm, setHeightCm] = useState('')
+  const [weightKg, setWeightKg] = useState('')
+
+  // Imperial units
+  const [heightFeet, setHeightFeet] = useState('')
+  const [heightInches, setHeightInches] = useState('')
+  const [weightLbs, setWeightLbs] = useState('')
+
+  const [gender, setGender] = useState('')
   const [occasion, setOccasion] = useState('')
-  const [weight, setWeight] = useState('')
   const [styleVibe, setStyleVibe] = useState('')
   const [fitPreference, setFitPreference] = useState('')
 
@@ -45,8 +55,25 @@ export default function TryForm({ onSubmit }) {
       return
     }
 
-    if (!height || height <= 0) {
-      alert('Please enter your height')
+    // Convert height to cm
+    let heightInCm = 0
+    if (unitSystem === 'metric') {
+      if (!heightCm || heightCm <= 0) {
+        alert('Please enter your height')
+        return
+      }
+      heightInCm = parseFloat(heightCm)
+    } else {
+      if (!heightFeet || heightFeet <= 0 || !heightInches || heightInches < 0) {
+        alert('Please enter your height')
+        return
+      }
+      // Convert feet and inches to cm: (feet * 12 + inches) * 2.54
+      heightInCm = (parseFloat(heightFeet) * 12 + parseFloat(heightInches)) * 2.54
+    }
+
+    if (!gender) {
+      alert('Please select your gender')
       return
     }
 
@@ -55,10 +82,24 @@ export default function TryForm({ onSubmit }) {
       return
     }
 
+    // Convert weight to kg
+    let weightInKg = null
+    if (unitSystem === 'metric') {
+      if (weightKg) {
+        weightInKg = parseFloat(weightKg)
+      }
+    } else {
+      if (weightLbs) {
+        // Convert pounds to kg: pounds * 0.453592
+        weightInKg = parseFloat(weightLbs) * 0.453592
+      }
+    }
+
     // Build FormData
     const formData = new FormData()
     formData.append('photo', photo)
-    formData.append('height_cm', height)
+    formData.append('height_cm', heightInCm.toFixed(2))
+    formData.append('gender', gender)
     formData.append('occasion', occasion)
 
     // Add checkout_id from localStorage if available
@@ -67,7 +108,7 @@ export default function TryForm({ onSubmit }) {
       formData.append('checkout_id', checkoutId)
     }
 
-    if (weight) formData.append('weight_kg', weight)
+    if (weightInKg) formData.append('weight_kg', weightInKg.toFixed(2))
     if (styleVibe) formData.append('style_vibe', styleVibe)
     if (fitPreference) formData.append('fit_preference', fitPreference)
 
@@ -133,21 +174,97 @@ export default function TryForm({ onSubmit }) {
           </label>
         </div>
 
+        {/* Unit System Toggle */}
+        <div className="flex items-center gap-4 mb-2">
+          <span className="text-sm font-medium text-black">Unit System:</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setUnitSystem('metric')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${unitSystem === 'metric'
+                ? 'bg-black text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              Metric (cm/kg)
+            </button>
+            <button
+              type="button"
+              onClick={() => setUnitSystem('imperial')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${unitSystem === 'imperial'
+                ? 'bg-black text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              Imperial (ft/in, lbs)
+            </button>
+          </div>
+        </div>
+
         {/* Height (Required) */}
         <div>
           <label className="block text-sm font-medium text-black mb-2">
-            Height (cm) <span className="text-red-500">*</span>
+            Height <span className="text-red-500">*</span>
           </label>
-          <input
-            type="number"
-            value={height}
-            onChange={(e) => setHeight(e.target.value)}
-            placeholder="170"
-            min="1"
-            max="300"
+          {unitSystem === 'metric' ? (
+            <input
+              type="number"
+              value={heightCm}
+              onChange={(e) => setHeightCm(e.target.value)}
+              placeholder="170"
+              min="1"
+              max="300"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white"
+              required
+            />
+          ) : (
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <input
+                  type="number"
+                  value={heightFeet}
+                  onChange={(e) => setHeightFeet(e.target.value)}
+                  placeholder="5"
+                  min="1"
+                  max="10"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white"
+                  required
+                />
+                <span className="text-xs text-gray-500 mt-1 block">feet</span>
+              </div>
+              <div className="flex-1">
+                <input
+                  type="number"
+                  value={heightInches}
+                  onChange={(e) => setHeightInches(e.target.value)}
+                  placeholder="10"
+                  min="0"
+                  max="11"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white"
+                  required
+                />
+                <span className="text-xs text-gray-500 mt-1 block">inches</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Gender (Required) */}
+        <div>
+          <label className="block text-sm font-medium text-black mb-2">
+            Gender <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white"
             required
-          />
+          >
+            <option value="">Select gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Non-binary">Non-binary</option>
+          </select>
         </div>
 
         {/* Occasion (Required) */}
@@ -173,17 +290,29 @@ export default function TryForm({ onSubmit }) {
         {/* Weight (Optional) */}
         <div>
           <label className="block text-sm font-medium text-black mb-2">
-            Weight (kg) <span className="text-gray-400 text-xs font-normal">(optional)</span>
+            Weight <span className="text-gray-400 text-xs font-normal">(optional)</span>
           </label>
-          <input
-            type="number"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            placeholder="70"
-            min="1"
-            max="500"
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white"
-          />
+          {unitSystem === 'metric' ? (
+            <input
+              type="number"
+              value={weightKg}
+              onChange={(e) => setWeightKg(e.target.value)}
+              placeholder="70"
+              min="1"
+              max="500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white"
+            />
+          ) : (
+            <input
+              type="number"
+              value={weightLbs}
+              onChange={(e) => setWeightLbs(e.target.value)}
+              placeholder="154"
+              min="1"
+              max="1100"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent bg-white"
+            />
+          )}
         </div>
 
         {/* Style Vibe (Optional) */}
