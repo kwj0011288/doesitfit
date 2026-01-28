@@ -61,12 +61,19 @@ export default function TryForm({ onSubmit }) {
     formData.append('height_cm', height)
     formData.append('occasion', occasion)
 
+    // Add checkout_id from localStorage if available
+    const checkoutId = localStorage.getItem('checkout_id')
+    if (checkoutId) {
+      formData.append('checkout_id', checkoutId)
+    }
+
     if (weight) formData.append('weight_kg', weight)
     if (styleVibe) formData.append('style_vibe', styleVibe)
     if (fitPreference) formData.append('fit_preference', fitPreference)
 
     onSubmit(formData)
   }
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-xl mx-auto">
