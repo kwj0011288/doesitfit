@@ -1,85 +1,138 @@
-import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useState, useRef } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
+import LoadingState from '../components/LoadingState'
+import ErrorBanner from '../components/ErrorBanner'
+import { getImage, clearImage } from '../lib/imageStore'
+import SEO from '../components/SEO'
 
 export default function SuccessPage() {
   const [searchParams] = useSearchParams()
-  const checkoutId = searchParams.get('checkout_id')
-  const [verified, setVerified] = useState(false)
+  const navigate = useNavigate()
   const [error, setError] = useState(null)
+  const [status, setStatus] = useState('Verifying payment...')
+
+  // Prevent double execution in Strict Mode
+  const processedRef = useRef(false)
 
   useEffect(() => {
-    const verifyPurchase = async () => {
+    if (processedRef.current) return
+    processedRef.current = true
+
+    const verifyAndGenerate = async () => {
+      const checkoutId = searchParams.get('checkout_id')
+
       if (!checkoutId) {
-        setError('No checkout ID found')
+        setError('No checkout ID found.')
         return
       }
 
       try {
-        const response = await api.verifyPurchase(checkoutId)
+        // 1. Verify Purchase (Records the purchase in Supabase)
+        setStatus('Verifying payment...')
+        const verifyRes = await api.verifyPurchase(checkoutId)
 
-        if (!response.ok) {
-          throw new Error('Failed to verify purchase')
+        if (!verifyRes.ok) {
+          // If already recorded (409), it's fine. Otherwise error.
+          if (verifyRes.status !== 409 && verifyRes.status !== 200) {
+            throw new Error('Payment verification failed.')
+          }
         }
 
-        // Store checkout_id in localStorage for later use
-        localStorage.setItem('checkout_id', checkoutId)
-        setVerified(true)
+        // 2. Load Saved Data (Auto-Generate)
+        setStatus('Generating your style report... This may take a minute.')
+
+        const file = await getImage()
+        const savedData = localStorage.getItem('pending_form_data')
+
+        if (!file || !savedData) {
+          // Fallback if data is missing (e.g. user cleared cache or different device)
+          // Then we MUST redirect to TryPage to re-upload.
+          console.warn('Saved data not found, redirecting to TryPage')
+          localStorage.setItem('checkout_id', checkoutId) // Save for TryPage
+          navigate('/try')
+          return
+        }
+
+        const formDataObj = JSON.parse(savedData)
+
+        // 3. Construct FormData
+        const formData = new FormData()
+        formData.append('photo', file)
+        formData.append('checkout_id', checkoutId)
+        formData.append('height_cm', formDataObj.height_cm)
+        formData.append('occasion', formDataObj.occasion)
+        if (formDataObj.weight_kg) formData.append('weight_kg', formDataObj.weight_kg)
+        if (formDataObj.style_vibe) formData.append('style_vibe', formDataObj.style_vibe)
+        if (formDataObj.fit_preference) formData.append('fit_preference', formDataObj.fit_preference)
+
+        // 4. Call Generate API
+        const genRes = await api.generate(formData)
+
+        if (!genRes.ok) {
+          throw new Error('Generation failed. Please try again.')
+        }
+
+        const resultData = await genRes.json()
+
+        // --- FIX: Unwrap & Save Safely ---
+        // Backend returns { result: { ... } } usually.
+        // We use || to be safe.
+        const finalResult = resultData.result || resultData
+
+        try {
+          sessionStorage.setItem('latest_result', JSON.stringify(finalResult))
+        } catch (e) {
+          console.error('Session storage save failed:', e)
+        }
+
+        // 5. Cleanup & Redirect
+        await clearImage()
+        localStorage.removeItem('pending_form_data')
+        localStorage.removeItem('checkout_id') // Consumed
+
+        // Pass via state as well (primary), but ResultPage will fallback to sessionStorage
+        navigate('/result', { state: { result: finalResult } })
+
       } catch (err) {
-        console.error('Verification error:', err)
-        setError(err.message)
+        console.error(err)
+        setError(err.message || 'Something went wrong')
       }
     }
 
-    verifyPurchase()
-  }, [checkoutId])
+    verifyAndGenerate()
+  }, [searchParams, navigate])
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-white">
-        <div className="max-w-md w-full bg-red-50 p-8 rounded-lg border border-red-100 text-center">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h1 className="text-xl font-bold text-red-800 mb-2">Verification Failed</h1>
-          <p className="text-red-600 mb-6">{error}</p>
-          <Link to="/" className="text-sm text-red-700 hover:underline">
-            Return Home
-          </Link>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <SEO
+          title="Payment Verification - Does it Fit?"
+          description="Verifying your payment and generating your personalized style report."
+          ogUrl="https://doesitfit.dev/success"
+        />
+        <div className="max-w-md w-full text-center">
+          <ErrorBanner message={error} onRetry={() => window.location.reload()} />
+          <button
+            onClick={() => navigate('/try')}
+            className="mt-4 text-primary underline"
+          >
+            Back to Start
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-white">
-      <div className="max-w-container w-full text-center space-y-8">
-        {verified ? (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center space-y-4 max-w-2xl mx-auto">
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-3xl font-bold text-green-800">Payment Successful!</h2>
-            <p className="text-xl text-green-700">
-              Your access has been verified. You can now generate your style report.
-            </p>
-            
-            <div className="pt-8">
-              <Link
-                to="/try"
-                className="inline-block bg-primary text-white px-12 py-4 rounded-lg text-lg font-medium hover:bg-gray-800 transform transition hover:scale-105"
-              >
-                Generate My Report
-              </Link>
-            </div>
-            
-            <p className="text-sm text-green-800/60 font-mono mt-4">
-              ID: {checkoutId?.slice(0, 8)}...
-            </p>
-          </div>
-        ) : (
-          <div className="text-center space-y-4">
-            <div className="animate-spin text-4xl">⏳</div>
-            <p className="text-xl text-secondary">Verifying your purchase...</p>
-          </div>
-        )}
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
+      <SEO
+        title="Payment Verification - Does it Fit?"
+        description="Verifying your payment and generating your personalized style report."
+        keywords="payment verification, payment processing, payment confirmation, checkout verification, payment status, payment check, payment validation, secure payment, payment security, payment processing, payment confirmation, payment success, payment complete, payment verification process"
+        ogUrl="https://doesitfit.dev/success"
+      />
+      <LoadingState message={status} />
     </div>
   )
 }

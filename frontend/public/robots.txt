@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://doesitfit.dev/sitemap.xml
+
+# Disallow admin or private areas if any
+Disallow: /api/
+Disallow: /admin/
