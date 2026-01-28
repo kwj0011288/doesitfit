@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles - Apple-like minimal aesthetic */
+body {
+  @apply bg-white text-gray-900 font-sans antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Smooth transitions */
+button, a {
+  @apply transition-all duration-200;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible, 
+input:focus-visible, 
+select:focus-visible {
+  @apply outline-none ring-2 ring-black ring-offset-2;
+}
+
+/* Custom scrollbar (minimal) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d1d1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b1b1b1;
+}
