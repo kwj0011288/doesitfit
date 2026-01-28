@@ -130,7 +130,7 @@ export default function SuccessPage() {
       <SEO
         title="Payment Verification - Does it Fit?"
         description="Verifying your payment and generating your personalized style report."
-        keywords="payment verification, payment processing, payment confirmation, checkout verification, payment status, payment check, payment validation, secure payment, payment security, payment processing, payment confirmation, payment success, payment complete, payment verification process"
+        keywords="payment verification, payment processing, checkout confirmation"
         ogUrl="https://doesitfit.dev/success"
       />
       <LoadingState message={status} />

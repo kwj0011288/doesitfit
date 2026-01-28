@@ -98,7 +98,7 @@ export default function TryPage() {
       <SEO
         title="Get Your Style Report - Does it Fit?"
         description="Upload your photo and get personalized fashion recommendations. Enter your details and receive instant AI-powered style analysis."
-        keywords="upload photo style analysis, get style report, fashion photo analysis, AI style report, personalized style report, instant style analysis, photo styling, fashion photo upload, style check, outfit check, color check, hairstyle check, body type check, fashion analysis tool, style analysis tool, photo style tool, fashion AI upload, style AI upload, get fashion advice, get style advice, get color advice, get hairstyle advice, fashion consultation, style consultation, color consultation, hairstyle consultation, personal style analysis, fashion assessment, style assessment, color assessment, hairstyle assessment"
+        keywords="upload photo, style analysis, fashion recommendations, AI style report, personalized style report, photo styling, fashion consultation"
         ogUrl="https://doesitfit.dev/try"
       />
       {/* Main Content */}

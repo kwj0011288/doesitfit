@@ -9,7 +9,7 @@ export default function TermsPage() {
       <SEO
         title="Terms of Service - Does it Fit?"
         description="Read our Terms of Service. Understand your rights and responsibilities when using our AI-powered personal styling service."
-        keywords="terms of service, terms and conditions, user agreement, service agreement, terms of use, user terms, service terms, legal terms, AI service terms, fashion service terms, styling service terms, online service terms, app terms, website terms, user rights, service rights, user responsibilities, service responsibilities, legal agreement, service agreement, user contract, service contract, terms of service agreement"
+        keywords="terms of service, terms and conditions, user agreement, service terms, user rights, user responsibilities"
         ogUrl="https://doesitfit.dev/terms"
       />
       <div className="flex-1 px-4 py-12">

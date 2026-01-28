@@ -9,7 +9,7 @@ export default function RefundPage() {
       <SEO
         title="Refund Policy - Does it Fit?"
         description="Our comprehensive Refund Policy explains when refunds are available, the refund process, and your consumer rights under GDPR and CCPA."
-        keywords="refund policy, refund request, money back guarantee, refund process, refund eligibility, consumer rights, refund rights, GDPR refund rights, CCPA refund rights, return policy, refund terms, refund conditions, how to get refund, refund procedure, refund timeline, refund process, customer refund, service refund, app refund, online refund, digital refund, refund guarantee, satisfaction guarantee, money back, refund information, refund details"
+        keywords="refund policy, refund request, money back guarantee, refund process, consumer rights, refund eligibility"
         ogUrl="https://doesitfit.dev/refund"
       />
       <div className="flex-1 px-4 py-12">

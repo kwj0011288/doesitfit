@@ -9,7 +9,7 @@ export default function PrivacyPage() {
       <SEO
         title="Privacy Policy - Does it Fit?"
         description="Read our comprehensive Privacy Policy. Learn how we protect your data, process photos, and comply with GDPR, CCPA, and CalOPPA regulations."
-        keywords="privacy policy, data protection, GDPR compliance, CCPA compliance, CalOPPA compliance, photo privacy, data privacy, user privacy, privacy protection, data security, personal data protection, privacy rights, data rights, privacy information, privacy notice, privacy statement, data processing, photo processing privacy, AI privacy, fashion app privacy, styling app privacy, online privacy, digital privacy, privacy compliance, privacy regulations, consumer privacy, user data protection"
+        keywords="privacy policy, data protection, GDPR compliance, CCPA compliance, photo privacy, data privacy, privacy rights"
         ogUrl="https://doesitfit.dev/privacy"
       />
       <div className="flex-1 px-4 py-12">

@@ -203,7 +203,7 @@ export default function ResultPage() {
       <SEO
         title="Your Style Report - Does it Fit?"
         description="View your personalized style report with color analysis, body type assessment, outfit recommendations, and hairstyle suggestions."
-        keywords="style report, fashion report, color analysis report, body type report, hairstyle report, outfit recommendations, style recommendations"
+        keywords="style report, fashion report, color analysis, body type analysis, hairstyle recommendations, outfit suggestions"
         ogUrl="https://doesitfit.dev/result"
       />
 

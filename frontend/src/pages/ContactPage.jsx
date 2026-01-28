@@ -9,7 +9,7 @@ export default function ContactPage() {
       <SEO
         title="Contact Us - Does it Fit?"
         description="Get in touch with Does it Fit? Contact our support team for questions, refund requests, or privacy concerns."
-        keywords="contact us, customer support, support email, help center, customer service, support team, contact support, get help, customer help, support help, fashion support, style support, refund support, privacy support, technical support, customer care, support contact, help contact, support information, contact information, customer contact, support email address, help email, support team contact, customer service contact, support assistance, help assistance, customer assistance"
+        keywords="contact us, customer support, help center, customer service, support email"
         ogUrl="https://doesitfit.dev/contact"
       />
       <div className="flex-1 px-6 py-24">
