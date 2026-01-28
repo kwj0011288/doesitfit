@@ -2,8 +2,17 @@
  * API client for Supabase Edge Functions
  */
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL ||
+  "https://glafafbiazbewfjhmbes.supabase.co";
 const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
+
+if (!import.meta.env.VITE_SUPABASE_URL) {
+  console.warn(
+    "⚠️ VITE_SUPABASE_URL not found in env, using fallback:",
+    SUPABASE_URL,
+  );
+}
 
 console.log("API Client Initialized");
 console.log("VITE_SUPABASE_URL:", SUPABASE_URL);
