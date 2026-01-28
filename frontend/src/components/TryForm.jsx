@@ -1,9 +1,12 @@
 import { useState } from 'react'
+import PhotoGuideModal from './PhotoGuideModal'
+import { HelpCircle } from 'lucide-react'
 
 export default function TryForm({ onSubmit }) {
   const [photo, setPhoto] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [unitSystem, setUnitSystem] = useState('metric') // 'metric' or 'imperial'
+  const [showGuideModal, setShowGuideModal] = useState(false)
 
   // Metric units
   const [heightCm, setHeightCm] = useState('')
@@ -120,9 +123,19 @@ export default function TryForm({ onSubmit }) {
       {/* Left Side: Photo Upload */}
       <div className="w-full md:w-1/2">
         <div className="sticky top-24">
-          <label className="block text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">
-            Upload Photo
-          </label>
+          <div className="flex items-center justify-between mb-6">
+            <label className="block text-sm font-semibold text-gray-500 uppercase tracking-wider">
+              Upload Photo
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowGuideModal(true)}
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-black transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span>Photo guidelines</span>
+            </button>
+          </div>
 
           <div className="border-2 border-dashed border-gray-300 rounded-[32px] p-12 text-center hover:border-gray-400 transition-colors bg-gray-50">
             <input
@@ -132,8 +145,8 @@ export default function TryForm({ onSubmit }) {
               className="hidden"
               id="photo-upload"
             />
-            <label htmlFor="photo-upload" className="cursor-pointer block">
-              {photoPreview ? (
+            {photoPreview ? (
+              <label htmlFor="photo-upload" className="cursor-pointer block">
                 <div className="space-y-6">
                   <div className="relative aspect-[3/4] max-w-md mx-auto rounded-[24px] overflow-hidden shadow-xl">
                     <img
@@ -144,7 +157,9 @@ export default function TryForm({ onSubmit }) {
                   </div>
                   <p className="text-sm text-gray-500">Click to change photo</p>
                 </div>
-              ) : (
+              </label>
+            ) : (
+              <div className="cursor-pointer block" onClick={() => setShowGuideModal(true)}>
                 <div className="space-y-4 py-12">
                   <div className="w-16 h-16 mx-auto bg-gray-200 rounded-full flex items-center justify-center">
                     <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,8 +171,8 @@ export default function TryForm({ onSubmit }) {
                     <p className="text-sm text-gray-500">JPG, PNG, or WebP (max 8MB)</p>
                   </div>
                 </div>
-              )}
-            </label>
+              </div>
+            )}
           </div>
 
           <p className="text-xs text-gray-500 mt-4 text-center">
@@ -361,6 +376,9 @@ export default function TryForm({ onSubmit }) {
           </button>
         </div>
       </div>
+
+      {/* Photo Guide Modal */}
+      <PhotoGuideModal isOpen={showGuideModal} onClose={() => setShowGuideModal(false)} />
     </form>
   )
 }

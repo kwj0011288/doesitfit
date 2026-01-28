@@ -58,6 +58,28 @@ select:focus-visible {
   background: #b1b1b1;
 }
 
+/* Modal scrollbar - cleaner style */
+.modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 16px 0;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+  background-clip: padding-box;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
