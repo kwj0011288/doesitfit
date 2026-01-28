@@ -1,8 +1,19 @@
 import { AlertCircle } from 'lucide-react'
 
-export default function ErrorBanner({ message, onRetry }) {
+export default function ErrorBanner({ message, errorCode, onRetry }) {
   // Convert technical error messages to user-friendly ones
-  const getUserFriendlyMessage = (errorMsg) => {
+  const getUserFriendlyMessage = (errorMsg, code) => {
+    // Check error code first (from backend)
+    if (code === 'RATE_LIMIT') {
+      return "Too many requests. Please wait a moment and try again."
+    }
+    if (code === 'OVERLOADED') {
+      return "The service is temporarily busy. Please wait a moment and try again."
+    }
+    if (code === 'SERVER_ERROR') {
+      return "Temporary server issue. Please try again in a moment."
+    }
+
     if (!errorMsg) return "Something went wrong. Please try again."
 
     const msg = errorMsg.toLowerCase()
@@ -39,7 +50,7 @@ export default function ErrorBanner({ message, onRetry }) {
     return "Something went wrong. Please try again."
   }
 
-  const friendlyMessage = getUserFriendlyMessage(message)
+  const friendlyMessage = getUserFriendlyMessage(message, errorCode)
 
   return (
     <div className="max-w-xl mx-auto p-8 bg-white rounded-2xl border border-gray-200 shadow-lg">

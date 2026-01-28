@@ -10,6 +10,7 @@ export default function SuccessPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [error, setError] = useState(null)
+  const [errorCode, setErrorCode] = useState(null)
   const [status, setStatus] = useState('Verifying payment...')
 
   // Prevent double execution in Strict Mode
@@ -71,7 +72,19 @@ export default function SuccessPage() {
         const genRes = await api.generate(formData)
 
         if (!genRes.ok) {
-          throw new Error('Generation failed. Please try again.')
+          // Try to extract error code and message from response
+          let errorMessage = 'Generation failed. Please try again.'
+          let errorCode = null
+          try {
+            const errorData = await genRes.json()
+            errorMessage = errorData.error || errorMessage
+            errorCode = errorData.code || null
+          } catch {
+            // If JSON parsing fails, use default message
+          }
+          const err = new Error(errorMessage)
+          err.code = errorCode
+          throw err
         }
 
         const resultData = await genRes.json()
@@ -98,6 +111,7 @@ export default function SuccessPage() {
       } catch (err) {
         console.error(err)
         setError(err.message || 'Something went wrong')
+        setErrorCode(err.code || null)
       }
     }
 
@@ -113,7 +127,7 @@ export default function SuccessPage() {
           ogUrl="https://doesitfit.dev/success"
         />
         <div className="max-w-md w-full text-center">
-          <ErrorBanner message={error} onRetry={() => window.location.reload()} />
+          <ErrorBanner message={error} errorCode={errorCode} onRetry={() => window.location.reload()} />
           <button
             onClick={() => navigate('/try')}
             className="mt-4 text-primary underline"
