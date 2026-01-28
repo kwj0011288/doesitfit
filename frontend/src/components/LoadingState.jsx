@@ -9,8 +9,8 @@ export default function LoadingState() {
 
       {/* Loading Text */}
       <div className="text-center space-y-2">
-        <h3 className="text-xl font-medium">Analyzing your style...</h3>
-        <p className="text-secondary text-sm">This may take a moment</p>
+        <h3 className="text-xl font-medium text-gray-900">Analyzing your style...</h3>
+        <p className="text-gray-600 text-sm">This may take a moment</p>
       </div>
     </div>
   )
