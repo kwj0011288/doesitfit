@@ -55,14 +55,14 @@ export default function ResultPage() {
     const keys = []
 
       // Outfits
-      (result.outfits || []).forEach((outfit, i) => {
+      ; (result.outfits || []).forEach((outfit, i) => {
         const outfitKey = `outfit:${i}`
         const outfitQuery = buildOutfitQuery(outfit, gender)
         keyToQuery[outfitKey] = outfitQuery
         keys.push(outfitKey)
 
           // Items
-          (outfit.items || []).forEach((item, j) => {
+          ; (outfit.items || []).forEach((item, j) => {
             const itemKey = `outfit:${i}:item:${j}:${item?.category || 'item'}`
             const itemQuery = buildItemQuery(item, gender)
             keyToQuery[itemKey] = itemQuery
@@ -71,7 +71,7 @@ export default function ResultPage() {
       })
 
       // Hairstyles
-      (result.hairstyles || []).forEach((hair) => {
+      ; (result.hairstyles || []).forEach((hair) => {
         const idx = hair?.index ?? 0
         const hairKey = `hair:${idx}`
         const hairQuery = buildHairQuery(hair, gender)
@@ -86,7 +86,7 @@ export default function ResultPage() {
 
   // 2. Async Image Fetching (Unsplash API)
   useEffect(() => {
-    if (!result) return
+    if (!result || !queryPlan.keys.length) return
 
     const fetchImages = async () => {
       const newMap = { ...imageData }
@@ -95,6 +95,7 @@ export default function ResultPage() {
         if (newMap[key]) return
 
         const query = queryPlan.keyToQuery[key]
+        if (!query) return
 
         // No key -> fallback
         if (!UNSPLASH_ACCESS_KEY || String(UNSPLASH_ACCESS_KEY).includes('your_unsplash')) {
@@ -140,7 +141,7 @@ export default function ResultPage() {
 
     fetchImages()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, queryPlan.keys.join('|')])
+  }, [result])
 
   // Helper: Curated Fallback Data
   const getFallbackData = (query) => {
@@ -393,13 +394,13 @@ export default function ResultPage() {
 
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
 
-              {/* 3x3 Grid Image (Sticky) - Gemini Generated, no Unsplash credit needed */}
+              {/* 2x3 Grid Image (Sticky) - Gemini Generated, no Unsplash credit needed */}
               <div className="w-full lg:w-1/3 lg:sticky lg:top-24">
                 <div className="bg-black rounded-[32px] shadow-2xl p-2 max-w-md mx-auto relative group overflow-hidden">
                   {mainImage ? (
                     <img
                       src={mainImage}
-                      alt="AI Generated Hairstyles 3x3 Grid"
+                      alt="AI Generated Hairstyles 2x3 Grid"
                       className="w-full h-auto object-contain rounded-[24px] border border-white/10"
                     />
                   ) : (
@@ -424,41 +425,22 @@ export default function ResultPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {result.hairstyles.map((hair, i) => {
                     const idx = hair?.index ?? i
-                    const hairKey = `hair:${idx}`
-                    const hairImg = getImageByKey(hairKey)
 
                     return (
-                      <div key={idx} className="flex bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 gap-4">
-                        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-100 shrink-0 relative">
-                          <img
-                            src={hairImg.url}
-                            alt={hair.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs shadow">
+                      <div key={idx} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300">
+                        <div className="flex items-start gap-3 mb-2">
+                          <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs shadow shrink-0">
                             {idx}
                           </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-bold text-[#1D1D1F] leading-tight truncate">
+                              {hair.name}
+                            </h3>
+                          </div>
                         </div>
-
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-bold text-[#1D1D1F] leading-tight truncate">
-                            {hair.name}
-                          </h3>
-                          <p className="text-sm text-[#86868B] leading-relaxed mt-1">
-                            {hair.description}
-                          </p>
-
-                          {hairImg.user && (
-                            <a
-                              href={`${hairImg.user.link}?utm_source=style_app&utm_medium=referral`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[10px] text-gray-400 mt-2 inline-block hover:underline truncate"
-                            >
-                              Photo by {hairImg.user.name} on Unsplash
-                            </a>
-                          )}
-                        </div>
+                        <p className="text-sm text-[#86868B] leading-relaxed mt-2">
+                          {hair.description}
+                        </p>
                       </div>
                     )
                   })}

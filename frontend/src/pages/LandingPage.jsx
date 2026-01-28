@@ -270,9 +270,9 @@ export default function LandingPage() {
             <div className="flex flex-col md:flex-row-reverse gap-16 items-center">
               <div className="w-full md:w-1/2">
                 <div className="bg-white rounded-[32px] shadow-xl shadow-black/5 border border-gray-100/50 p-2">
-                  <div className="aspect-square bg-white rounded-[24px] p-3">
-                    <div className="grid grid-cols-3 gap-2 h-full">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <div className="aspect-[2/3] bg-white rounded-[24px] p-3">
+                    <div className="grid grid-cols-2 gap-2 h-full">
+                      {[1, 2, 3, 4, 5, 6].map((num) => (
                         <div key={num} className="bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
                           <span className="text-gray-600 text-xs font-bold">{num}</span>
                         </div>
