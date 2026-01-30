@@ -278,7 +278,6 @@ export default function TryForm({ onSubmit }) {
             <option value="">Select gender</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
-            <option value="Non-binary">Non-binary</option>
           </select>
         </div>
 
