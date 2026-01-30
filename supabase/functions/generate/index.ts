@@ -253,35 +253,35 @@ type HairTraits = {
   volume: "flat" | "natural" | "voluminous" | "teased";
   texture: "straight" | "wavy" | "curly" | "coily" | "textured";
   silhouette:
-    | "pixie"
-    | "bob"
-    | "lob"
-    | "layers"
-    | "shag"
-    | "slick_back"
-    | "fringe"
-    | "bun"
-    | "ponytail"
-    | "half_up"
-    | "braids"
-    | "twists"
-    | "waves"
-    | "curls"
-    | "updo"
-    | "chignon"
-    | "topknot"
-    | "braided_updo"
-    | "fishtail"
-    | "dutch_braids"
-    | "french_braids"
-    | "space_buns"
-    | "low_bun"
-    | "high_bun"
-    | "messy_bun"
-    | "sleek_ponytail"
-    | "low_ponytail"
-    | "side_ponytail"
-    | "braided_ponytail";
+  | "pixie"
+  | "bob"
+  | "lob"
+  | "layers"
+  | "shag"
+  | "slick_back"
+  | "fringe"
+  | "bun"
+  | "ponytail"
+  | "half_up"
+  | "braids"
+  | "twists"
+  | "waves"
+  | "curls"
+  | "updo"
+  | "chignon"
+  | "topknot"
+  | "braided_updo"
+  | "fishtail"
+  | "dutch_braids"
+  | "french_braids"
+  | "space_buns"
+  | "low_bun"
+  | "high_bun"
+  | "messy_bun"
+  | "sleek_ponytail"
+  | "low_ponytail"
+  | "side_ponytail"
+  | "braided_ponytail";
   direction: "down" | "up" | "pulled_back" | "side_swept";
 };
 
@@ -904,13 +904,27 @@ Output ONLY valid JSON with EXACTLY this schema. No markdown, no comments, no ex
     const gridPrompt = `
 Using the uploaded photo as the ONLY identity reference, generate ONE single image that is a 3×3 collage (grid) of hairstyle variations.
 
+CRITICAL IDENTITY INFORMATION:
+- Person's gender: ${gender}
+${gender.toLowerCase() === 'male' || gender.toLowerCase() === '남자' || gender.toLowerCase() === 'man' ? `
+- This is a MALE person. ALL panels MUST show a masculine appearance.
+- Maintain masculine facial features, masculine bone structure, masculine jawline.
+- NO feminine styling, NO feminine makeup, NO feminine accessories.
+- Hairstyles should be appropriate for men and maintain a masculine aesthetic.
+` : `
+- This is a FEMALE person. ALL panels MUST show a feminine appearance.
+- Maintain feminine facial features, feminine styling.
+- Hairstyles should be appropriate for women and maintain a feminine aesthetic.
+`}
+
 ABSOLUTE GLOBAL CONSTRAINTS (MUST FOLLOW):
 - Output MUST be exactly ONE image.
 - Final image MUST be a perfect rectangle (2:3 aspect ratio, portrait orientation).
 - The person MUST be the exact same individual as the uploaded photo in ALL 6 panels (identity lock).
+- CRITICAL: Maintain the person's gender (${gender}) in ALL panels. NO gender changes or gender-ambiguous appearances.
 - Same camera distance, same framing, same lighting, same head pose (front-facing), same neutral expression in every panel.
 - Same clothing and same neutral background in every panel.
-- Only the hair is allowed to change. No other changes.
+- Only the hair is allowed to change. No other changes to face, gender presentation, or body.
 
 GRID RULES:
 - 2×3 grid, 6 panels, evenly sized, perfectly aligned with clear borders/separators between panels.
@@ -922,6 +936,7 @@ HAIR VARIATION RULES (CRITICAL):
 - Hair color MUST remain natural and consistent with the original photo (no fantasy colors).
 - No wigs, no exaggerated transformations. Salon-achievable only.
 - Apply the panel-by-panel trait specs EXACTLY. Each panel must match its traits.
+- IMPORTANT: Hairstyles must be appropriate for the person's gender (${gender}).
 
 PANEL ORDER (left→right, top→bottom):
 Top row:     0  1
@@ -943,7 +958,7 @@ QUALITY:
 - No blur, no distortion, no duplicated face.
 
 NEGATIVE PROMPT:
-different person, face change, identity drift, altered facial features, different ethnicity, different age, different makeup, different expression, distorted face, duplicated face, blurry, cartoon, illustration, painting
+different person, face change, identity drift, altered facial features, different ethnicity, different age, different makeup, different expression, distorted face, duplicated face, blurry, cartoon, illustration, painting${gender.toLowerCase() === 'male' || gender.toLowerCase() === '남자' || gender.toLowerCase() === 'man' ? ', feminine features, feminine styling, feminine makeup, female appearance, woman, girl' : ', masculine features, overly masculine styling, male appearance, man, boy'}
 
 Output only ONE square collage image.
 `;
