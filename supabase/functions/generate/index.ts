@@ -651,40 +651,44 @@ serve(async (req) => {
      * - outfits: diversity_tags required
      * - items: category required
      */
-    const basePrompt = `
-You are a world-class personal stylist. Analyze the uploaded photo and the user details below, then generate recommendations that are realistic, flattering, and appropriate for the user’s situation.
+    const isMale = gender.toLowerCase() === "male" || gender.toLowerCase() === "man" || gender.toLowerCase() === "남자";
 
-User details:
-- Gender: ${gender}
-- Height: ${heightCm} cm (${heightImperial})
-    - Occasion: ${occasion}
-${weightKg ? `- Weight: ${weightKg} kg${weightImperial}` : ""}
-${styleVibe ? `- Preferred Vibe: ${styleVibe}` : ""}
-${fitPreference ? `- Fit Preference: ${fitPreference}` : ""}
-
-Critical rules (must follow):
-1) Do NOT give extreme, costume-like, or niche styles unless the user explicitly asked for it.
-2) Every recommendation must be justified by visible traits in the photo (overall proportions, face shape, vibe, contrast, etc.).
-3) Prioritize flattering fit, balanced proportions, and clean color harmony. When unsure, choose classic, safe options.
-4) Respect Occasion strictly:
-   - Interview/Work: polished, minimal, low-risk, neutral colors, no flashy items.
-   - Daily: practical and versatile.
-   - Date/Party: still flattering, but only slightly bolder, never extreme.
-5) Respect Preferred Vibe if provided. If not provided, infer a conservative, neutral vibe from the photo.
-6) Respect Fit Preference if provided:
-   - If "Slim-No": avoid tight fits.
-   - If "Oversized-No": avoid oversized fits.
-
-STRICT UNIQUENESS POLICY (NON-NEGOTIABLE):
-- If you cannot produce UNIQUE outputs, you MUST internally regenerate until you can.
-- Do NOT output JSON unless all uniqueness constraints are satisfied.
-
+    const maleHairSection = `
 HAIRSTYLES (MUST BE UNIQUE):
 - Exactly 6 hairstyles indexed 0..5.
+- This person is MALE. ALL hairstyles MUST be masculine and appropriate for men.
 - Each hairstyle MUST include traits: length, part, volume, texture, silhouette, direction.
 - CRITICAL: You MUST use DIFFERENT combinations across all 6 styles. Plan your combinations before generating.
 
-DIVERSITY STRATEGY (MUST FOLLOW):
+AVAILABLE SILHOUETTES FOR MEN (use ONLY these — no feminine styles):
+buzz_cut, crew_cut, ivy_league, side_part, quiff, pompadour, textured_crop, french_crop, slick_back, faux_hawk, undercut, caesar, waves, fringe, taper, fade, man_bun, top_knot, cornrows, dreadlocks, mohawk
+
+DIVERSITY STRATEGY FOR MEN (MUST FOLLOW):
+- Length distribution: short (2), medium (2), medium-long (2)
+  - short: buzz_cut, crew_cut, caesar, french_crop, fade, taper
+  - medium: textured_crop, quiff, ivy_league, side_part, waves, fringe
+  - medium-long: pompadour, slick_back, faux_hawk, undercut, man_bun, top_knot
+- Vary part: side, none, center (less common for men), zigzag (for textured/natural)
+- Vary volume: flat, natural, voluminous, textured
+- Vary texture: straight, wavy, curly, coily, textured
+- Use different directions: down, side_swept, pulled_back, up
+
+EXAMPLE DISTRIBUTION FOR MEN (use as inspiration, create unique combinations):
+- Style 0: short + side + flat + straight + crew_cut + down
+- Style 1: medium + side + natural + wavy + quiff + up
+- Style 2: medium + none + natural + textured + textured_crop + down
+- Style 3: short + none + flat + coily + fade + down
+- Style 4: medium + center + voluminous + wavy + pompadour + up (PRIMARY)
+- Style 5: medium-long + none + natural + straight + slick_back + pulled_back`;
+
+    const femaleHairSection = `
+HAIRSTYLES (MUST BE UNIQUE):
+- Exactly 6 hairstyles indexed 0..5.
+- This person is FEMALE. ALL hairstyles MUST be feminine and appropriate for women.
+- Each hairstyle MUST include traits: length, part, volume, texture, silhouette, direction.
+- CRITICAL: You MUST use DIFFERENT combinations across all 6 styles. Plan your combinations before generating.
+
+DIVERSITY STRATEGY FOR WOMEN (MUST FOLLOW):
 - Use ALL available options: short, medium, long lengths (distribute evenly: ~2 each)
 - Use ALL part options: center, side, none, zigzag (vary them)
 - Use ALL volume options: flat, natural, voluminous, teased (mix them)
@@ -692,10 +696,42 @@ DIVERSITY STRATEGY (MUST FOLLOW):
 - Use MANY silhouette options: pixie, bob, lob, layers, shag, slick_back, fringe, bun, ponytail, half_up, braids, twists, waves, curls, updo, chignon, topknot, braided_updo, fishtail, dutch_braids, french_braids, space_buns, low_bun, high_bun, messy_bun, sleek_ponytail, low_ponytail, side_ponytail, braided_ponytail
 - Use ALL direction options: down, up, pulled_back, side_swept
 
-EXAMPLE DISTRIBUTION (use as inspiration, but create unique combinations):
+EXAMPLE DISTRIBUTION FOR WOMEN (use as inspiration, create unique combinations):
 - Style 0: short + side + natural + straight + pixie + down
 - Style 1: medium + center + voluminous + wavy + layers + down
-- Style 2: long + none + natural + curly + dutch_braids + pulled_back
+- Style 2: long + none + natural + curly + dutch_braids + pulled_back`;
+
+    const basePrompt = `
+You are a world-class personal stylist. Analyze the uploaded photo and the user details below, then generate recommendations that are realistic, flattering, and gender-appropriate for the user’s situation.
+
+User details:
+- Gender: ${gender}
+- Height: ${heightCm} cm (${heightImperial})
+- Occasion: ${occasion}
+${weightKg ? `- Weight: ${weightKg} kg${weightImperial}` : ""}
+${styleVibe ? `- Preferred Vibe: ${styleVibe}` : ""}
+${fitPreference ? `- Fit Preference: ${fitPreference}` : ""}
+
+Critical rules (must follow):
+1) Do NOT give extreme, costume-like, or niche styles unless the user explicitly asked for it.
+2) Every recommendation must be justified by visible traits in the photo (overall proportions, face vibe, contrast, etc.).
+3) Prioritize flattering fit, balanced proportions, and clean color harmony. When unsure, choose classic, safe options.
+4) GENDER RULE (CRITICAL): ALL recommendations (outfits, hairstyles, styling rules) MUST be appropriate for ${gender}.
+   ${isMale ? "- This is a MALE. Recommend men’s clothing, men’s hairstyles, masculine styling only. No women’s items." : "- This is a FEMALE. Recommend women’s clothing, women’s hairstyles, feminine styling only."}
+5) Respect Occasion strictly:
+   - Interview/Work: polished, minimal, low-risk, neutral colors, no flashy items.
+   - Daily: practical and versatile.
+   - Date/Party: still flattering, but only slightly bolder, never extreme.
+6) Respect Preferred Vibe if provided. If not provided, infer a conservative, neutral vibe from the photo.
+7) Respect Fit Preference if provided:
+   - If "Slim-No": avoid tight fits.
+   - If "Oversized-No": avoid oversized fits.
+
+STRICT UNIQUENESS POLICY (NON-NEGOTIABLE):
+- If you cannot produce UNIQUE outputs, you MUST internally regenerate until you can.
+- Do NOT output JSON unless all uniqueness constraints are satisfied.
+
+${isMale ? maleHairSection : femaleHairSection}
 - Style 3: short + zigzag + flat + textured + slick_back + side_swept
 - Style 4: medium + side + voluminous + wavy + lob + down (PRIMARY)
 - Style 5: long + center + natural + straight + sleek_ponytail + up
@@ -715,7 +751,7 @@ Uniqueness rules:
   D) Actively vary traits: don't use the same length/part/volume/texture/silhouette/direction repeatedly.
 
 OUTFITS (MUST BE UNIQUE):
-- Exactly 3 outfits.
+- Exactly 3 outfits. ALL outfits MUST be appropriate for ${gender}.
 - Each outfit MUST include diversity_tags: formality, silhouette, color_family, shoe_type.
 - Uniqueness rules:
   A) No two outfits may share the same (formality + shoe_type).
@@ -725,29 +761,31 @@ OUTFITS (MUST BE UNIQUE):
 KEY ITEMS (MUST BE UNIQUE):
 - Each outfit items[] must include category and categories must not repeat within the same outfit.
 - Across ALL outfits, do not repeat the same (category + name). If it repeats, regenerate.
+- ALL items must be ${gender}-appropriate clothing/accessories.
 
 REALISM RULE:
 - Avoid unrealistic colors, exaggerated wigs, or dramatic transformations.
 - Keep changes within what a real salon could do.
 
 Required analyses:
-- Personal color guidance with a 5-color HEX palette
-- Determine ONE body shape keyword and ONE face shape keyword (keywords only)
-- Provide styling rules as short, actionable bullets
-- Outfits: exactly 3 complete looks aligned with Occasion and Vibe
-- Hairstyles: exactly 6, following the strict uniqueness rules above
+- Personal color: analyze the person's skin tone, undertone, and recommend a season with a 5-color HEX palette
+- Body shape: ONE keyword describing overall body proportions (e.g., athletic, lean, broad-shouldered for men; hourglass, pear, rectangle for women)
+- Face vibe: ONE keyword describing the overall face impression (e.g., sharp, soft, angular, chiseled, delicate, bold, refined, rugged, gentle)
+- Provide styling rules as short, actionable bullets tailored to ${gender}
+- Outfits: exactly 3 complete looks for ${gender} aligned with Occasion and Vibe
+- Hairstyles: exactly 6, following the strict uniqueness and gender rules above
 
 Output ONLY valid JSON with EXACTLY this schema. No markdown, no comments, no extra text.
 
-    {
-      "personal_color": {
-    "season": "String",
+{
+  "personal_color": {
+    "season": "String (e.g. Warm Autumn, Cool Winter, etc.)",
     "description": "String",
     "palette": ["#Hex", "#Hex", "#Hex", "#Hex", "#Hex"]
   },
   "analysis": {
     "body_shape": "KEYWORD_ONLY",
-    "face_shape": "KEYWORD_ONLY",
+    "face_vibe": "KEYWORD_ONLY",
     "notes": "Short explanation (2-4 sentences) explaining why these keywords were chosen based on visible traits."
   },
   "styling_rules": ["String", "String", "String", "String"],
@@ -790,34 +828,31 @@ Output ONLY valid JSON with EXACTLY this schema. No markdown, no comments, no ex
         "color_family": "neutral|cool|warm|earth|monochrome",
         "shoe_type": "loafer|sneaker|heel|boot|flat"
       },
-          "items": [
+      "items": [
         { "category": "top|bottom|outerwear|shoes|bag|accessory", "name": "Item Name", "color": "Color", "image_query": "search keywords" }
       ]
     }
-      ],
-      "hairstyles": [
-        {
+  ],
+  "hairstyles": [
+    {
       "index": 0,
       "name": "String (distinct style name)",
-      "description": "String (why this style works)",
+      "description": "String (why this style works for this person)",
       "image_query": "search keywords",
       "traits": {
         "length": "short|medium|long",
         "part": "center|side|none|zigzag",
         "volume": "flat|natural|voluminous|teased",
         "texture": "straight|wavy|curly|coily|textured",
-        "silhouette": "pixie|bob|lob|layers|shag|slick_back|fringe|bun|ponytail|half_up|braids|twists|waves|curls|updo|chignon|topknot|braided_updo|fishtail|dutch_braids|french_braids|space_buns|low_bun|high_bun|messy_bun|sleek_ponytail|low_ponytail|side_ponytail|braided_ponytail",
+        "silhouette": "${isMale ? "buzz_cut|crew_cut|ivy_league|side_part|quiff|pompadour|textured_crop|french_crop|slick_back|faux_hawk|undercut|caesar|waves|fringe|taper|fade|man_bun|top_knot|cornrows|dreadlocks|mohawk" : "pixie|bob|lob|layers|shag|slick_back|fringe|bun|ponytail|half_up|braids|twists|waves|curls|updo|chignon|topknot|braided_updo|fishtail|dutch_braids|french_braids|space_buns|low_bun|high_bun|messy_bun|sleek_ponytail|low_ponytail|side_ponytail|braided_ponytail"}",
         "direction": "down|up|pulled_back|side_swept"
       }
     },
-    { "index": 1, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"pixie|bob|lob|layers|shag|slick_back|fringe|bun|ponytail|half_up|braids|twists|waves|curls|updo|chignon|topknot|braided_updo|fishtail|dutch_braids|french_braids|space_buns|low_bun|high_bun|messy_bun|sleek_ponytail|low_ponytail|side_ponytail|braided_ponytail","direction":"down|up|pulled_back|side_swept" } },
-    { "index": 2, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"pixie|bob|lob|layers|shag|slick_back|fringe|bun|ponytail|half_up|braids|twists|waves|curls|updo|chignon|topknot|braided_updo|fishtail|dutch_braids|french_braids|space_buns|low_bun|high_bun|messy_bun|sleek_ponytail|low_ponytail|side_ponytail|braided_ponytail","direction":"down|up|pulled_back|side_swept" } },
-    { "index": 3, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"pixie|bob|lob|layers|shag|slick_back|fringe|bun|ponytail|half_up|braids|twists|waves|curls|updo|chignon|topknot|braided_updo|fishtail|dutch_braids|french_braids|space_buns|low_bun|high_bun|messy_bun|sleek_ponytail|low_ponytail|side_ponytail|braided_ponytail","direction":"down|up|pulled_back|side_swept" } },
-    { "index": 4, "name": "String (PRIMARY/BEST)", "description": "String (best style)", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"pixie|bob|lob|layers|shag|slick_back|fringe|bun|ponytail|half_up|braids|twists|waves|curls|updo|chignon|topknot|braided_updo|fishtail|dutch_braids|french_braids|space_buns|low_bun|high_bun|messy_bun|sleek_ponytail|low_ponytail|side_ponytail|braided_ponytail","direction":"down|up|pulled_back|side_swept" } },
-    { "index": 5, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"pixie|bob|lob|layers|shag|slick_back|fringe|bun|ponytail|half_up|braids|twists|waves|curls|updo|chignon|topknot|braided_updo|fishtail|dutch_braids|french_braids|space_buns|low_bun|high_bun|messy_bun|sleek_ponytail|low_ponytail|side_ponytail|braided_ponytail","direction":"down|up|pulled_back|side_swept" } },
-    { "index": 6, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"pixie|bob|lob|layers|shag|slick_back|fringe|bun|ponytail|half_up|braids|twists|waves|curls|updo|chignon|topknot|braided_updo|fishtail|dutch_braids|french_braids|space_buns|low_bun|high_bun|messy_bun|sleek_ponytail|low_ponytail|side_ponytail|braided_ponytail","direction":"down|up|pulled_back|side_swept" } },
-    { "index": 7, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"pixie|bob|lob|layers|shag|slick_back|fringe|bun|ponytail|half_up|braids|twists|waves|curls|updo|chignon|topknot|braided_updo|fishtail|dutch_braids|french_braids|space_buns|low_bun|high_bun|messy_bun|sleek_ponytail|low_ponytail|side_ponytail|braided_ponytail","direction":"down|up|pulled_back|side_swept" } },
-    { "index": 8, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"pixie|bob|lob|layers|shag|slick_back|fringe|bun|ponytail|half_up|braids|twists|waves|curls|updo|chignon|topknot|braided_updo|fishtail|dutch_braids|french_braids|space_buns|low_bun|high_bun|messy_bun|sleek_ponytail|low_ponytail|side_ponytail|braided_ponytail","direction":"down|up|pulled_back|side_swept" } }
+    { "index": 1, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"[use gender-appropriate silhouette]","direction":"down|up|pulled_back|side_swept" } },
+    { "index": 2, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"[use gender-appropriate silhouette]","direction":"down|up|pulled_back|side_swept" } },
+    { "index": 3, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"[use gender-appropriate silhouette]","direction":"down|up|pulled_back|side_swept" } },
+    { "index": 4, "name": "String (PRIMARY/BEST)", "description": "String (best style for this person)", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"[use gender-appropriate silhouette]","direction":"down|up|pulled_back|side_swept" } },
+    { "index": 5, "name": "String", "description": "String", "image_query": "String", "traits": { "length":"short|medium|long","part":"center|side|none|zigzag","volume":"flat|natural|voluminous|teased","texture":"straight|wavy|curly|coily|textured","silhouette":"[use gender-appropriate silhouette]","direction":"down|up|pulled_back|side_swept" } }
   ]
 }
 `;
@@ -906,7 +941,7 @@ Using the uploaded photo as the ONLY identity reference, generate ONE single ima
 
 CRITICAL IDENTITY INFORMATION:
 - Person's gender: ${gender}
-${gender.toLowerCase() === 'male' || gender.toLowerCase() === '남자' || gender.toLowerCase() === 'man' ? `
+${isMale ? `
 - This is a MALE person. ALL panels MUST show a masculine appearance.
 - Maintain masculine facial features, masculine bone structure, masculine jawline.
 - NO feminine styling, NO feminine makeup, NO feminine accessories.
@@ -950,7 +985,7 @@ REMINDER: Panel 3 (center-right) is the PRIMARY/BEST recommendation.
 
 INDEX LABEL RULES (MUST BE VISIBLE):
 - Add a CLEAR, READABLE index label in the bottom-right corner of EACH panel.
-- Labels MUST be exactly: 0, 1, 2, 3, 4, 5, 6, 7, 8
+- Labels MUST be exactly: 0, 1, 2, 3, 4, 5
 - No other text.
 
 QUALITY:
@@ -958,7 +993,7 @@ QUALITY:
 - No blur, no distortion, no duplicated face.
 
 NEGATIVE PROMPT:
-different person, face change, identity drift, altered facial features, different ethnicity, different age, different makeup, different expression, distorted face, duplicated face, blurry, cartoon, illustration, painting${gender.toLowerCase() === 'male' || gender.toLowerCase() === '남자' || gender.toLowerCase() === 'man' ? ', feminine features, feminine styling, feminine makeup, female appearance, woman, girl' : ', masculine features, overly masculine styling, male appearance, man, boy'}
+different person, face change, identity drift, altered facial features, different ethnicity, different age, different makeup, different expression, distorted face, duplicated face, blurry, cartoon, illustration, painting${isMale ? ', feminine features, feminine styling, feminine makeup, female appearance, woman, girl' : ', masculine features, overly masculine styling, male appearance, man, boy'}
 
 Output only ONE square collage image.
 `;
