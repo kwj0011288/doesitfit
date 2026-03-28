@@ -24,26 +24,27 @@ export default function ResultPage() {
 
   // Build query functions using new schema fields
   const buildOutfitQuery = (outfit, gender) => {
-    const g = gender ? `${gender} ` : ''
+    const g = gender === 'Male' ? 'mens' : gender === 'Female' ? 'womens' : ''
+    const title = outfit?.title || ''
     const tags = outfit?.diversity_tags || {}
-    // Use diversity_tags for more stable and diverse queries
-    return `${g}${tags.formality || ''} ${tags.silhouette || ''} outfit ${tags.color_family || ''} ${tags.shoe_type || ''}`.trim()
+    const formality = tags.formality === 'date_party' ? 'evening' : tags.formality || ''
+    // Use outfit title as primary signal + fashion editorial suffix for quality
+    return `${g} ${title} ${formality} fashion outfit lookbook editorial`.trim()
   }
 
   const buildItemQuery = (item, gender) => {
-    const g = gender ? `${gender} ` : ''
-    // category is now required in backend schema
+    const g = gender === 'Male' ? 'mens' : gender === 'Female' ? 'womens' : ''
     const base = item?.image_query || item?.name || ''
-    const cat = item?.category ? `${item.category} ` : ''
-    return `${g}${cat}${base}`.trim()
+    const cat = item?.category || ''
+    // Use specific item name as primary, category as context
+    return `${g} ${base} ${cat} fashion`.trim()
   }
 
   const buildHairQuery = (hair, gender) => {
-    const g = gender ? `${gender} ` : ''
+    const g = gender === 'Male' ? 'mens' : gender === 'Female' ? 'womens' : ''
     const t = hair?.traits || {}
-    // Use traits to reduce repetitive results
     const base = hair?.image_query || hair?.name || 'hairstyle'
-    return `${g}${base} ${t.length || ''} ${t.silhouette || ''} ${t.part || ''} ${t.texture || ''}`.trim()
+    return `${g} ${base} ${t.silhouette || ''} hairstyle salon`.trim()
   }
 
   // Query Plan: stable keys based on the updated schema
@@ -84,6 +85,13 @@ export default function ResultPage() {
     return { keys: uniqueKeys, keyToQuery }
   }, [result])
 
+  // Simple stable hash: maps a string key to 0..n-1
+  const stableIndex = (key, n) => {
+    let h = 0
+    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0
+    return h % n
+  }
+
   // 2. Async Image Fetching (Unsplash API)
   useEffect(() => {
     if (!result || !queryPlan.keys.length) return
@@ -105,7 +113,7 @@ export default function ResultPage() {
 
         try {
           const res = await fetch(
-            `https://api.unsplash.com/search/photos?page=1&per_page=1&query=${encodeURIComponent(query)}&orientation=portrait`,
+            `https://api.unsplash.com/search/photos?page=1&per_page=5&query=${encodeURIComponent(query)}&orientation=portrait`,
             {
               headers: {
                 'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}`
@@ -115,8 +123,10 @@ export default function ResultPage() {
 
           if (res.ok) {
             const data = await res.json()
-            const photo = data.results?.[0]
-            if (photo) {
+            const photos = data.results || []
+            if (photos.length > 0) {
+              // Pick different photo per key using stable hash — avoids duplicates across keys
+              const photo = photos[stableIndex(key, photos.length)]
               newMap[key] = {
                 url: photo.urls.regular,
                 user: {
