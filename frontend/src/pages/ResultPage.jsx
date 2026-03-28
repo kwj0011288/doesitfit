@@ -260,9 +260,9 @@ export default function ResultPage() {
                     </div>
                     <div className="w-px h-12 bg-gray-200 hidden md:block" />
                     <div className="space-y-1">
-                      <span className="text-sm text-[#86868B]">Face Shape</span>
+                      <span className="text-sm text-[#86868B]">Face Vibe</span>
                       <div className="text-3xl font-bold text-[#AF52DE]">
-                        {result.analysis?.face_shape || 'Analyzed'}
+                        {result.analysis?.face_vibe || result.analysis?.face_shape || 'Analyzed'}
                       </div>
                     </div>
                   </div>
