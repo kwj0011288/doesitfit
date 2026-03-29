@@ -253,35 +253,35 @@ type HairTraits = {
   volume: "flat" | "natural" | "voluminous" | "teased";
   texture: "straight" | "wavy" | "curly" | "coily" | "textured";
   silhouette:
-  | "pixie"
-  | "bob"
-  | "lob"
-  | "layers"
-  | "shag"
-  | "slick_back"
-  | "fringe"
-  | "bun"
-  | "ponytail"
-  | "half_up"
-  | "braids"
-  | "twists"
-  | "waves"
-  | "curls"
-  | "updo"
-  | "chignon"
-  | "topknot"
-  | "braided_updo"
-  | "fishtail"
-  | "dutch_braids"
-  | "french_braids"
-  | "space_buns"
-  | "low_bun"
-  | "high_bun"
-  | "messy_bun"
-  | "sleek_ponytail"
-  | "low_ponytail"
-  | "side_ponytail"
-  | "braided_ponytail";
+    | "pixie"
+    | "bob"
+    | "lob"
+    | "layers"
+    | "shag"
+    | "slick_back"
+    | "fringe"
+    | "bun"
+    | "ponytail"
+    | "half_up"
+    | "braids"
+    | "twists"
+    | "waves"
+    | "curls"
+    | "updo"
+    | "chignon"
+    | "topknot"
+    | "braided_updo"
+    | "fishtail"
+    | "dutch_braids"
+    | "french_braids"
+    | "space_buns"
+    | "low_bun"
+    | "high_bun"
+    | "messy_bun"
+    | "sleek_ponytail"
+    | "low_ponytail"
+    | "side_ponytail"
+    | "braided_ponytail";
   direction: "down" | "up" | "pulled_back" | "side_swept";
 };
 
@@ -651,7 +651,10 @@ serve(async (req) => {
      * - outfits: diversity_tags required
      * - items: category required
      */
-    const isMale = gender.toLowerCase() === "male" || gender.toLowerCase() === "man" || gender.toLowerCase() === "남자";
+    const isMale =
+      gender.toLowerCase() === "male" ||
+      gender.toLowerCase() === "man" ||
+      gender.toLowerCase() === "남자";
 
     const maleHairSection = `
 HAIRSTYLES (MUST BE UNIQUE):
@@ -941,16 +944,20 @@ Using the uploaded photo as the ONLY identity reference, generate ONE single ima
 
 CRITICAL IDENTITY INFORMATION:
 - Person's gender: ${gender}
-${isMale ? `
+${
+  isMale
+    ? `
 - This is a MALE person. ALL panels MUST show a masculine appearance.
 - Maintain masculine facial features, masculine bone structure, masculine jawline.
 - NO feminine styling, NO feminine makeup, NO feminine accessories.
 - Hairstyles should be appropriate for men and maintain a masculine aesthetic.
-` : `
+`
+    : `
 - This is a FEMALE person. ALL panels MUST show a feminine appearance.
 - Maintain feminine facial features, feminine styling.
 - Hairstyles should be appropriate for women and maintain a feminine aesthetic.
-`}
+`
+}
 
 ABSOLUTE GLOBAL CONSTRAINTS (MUST FOLLOW):
 - Output MUST be exactly ONE image.
@@ -993,7 +1000,7 @@ QUALITY:
 - No blur, no distortion, no duplicated face.
 
 NEGATIVE PROMPT:
-different person, face change, identity drift, altered facial features, different ethnicity, different age, different makeup, different expression, distorted face, duplicated face, blurry, cartoon, illustration, painting${isMale ? ', feminine features, feminine styling, feminine makeup, female appearance, woman, girl' : ', masculine features, overly masculine styling, male appearance, man, boy'}
+different person, face change, identity drift, altered facial features, different ethnicity, different age, different makeup, different expression, distorted face, duplicated face, blurry, cartoon, illustration, painting${isMale ? ", feminine features, feminine styling, feminine makeup, female appearance, woman, girl" : ", masculine features, overly masculine styling, male appearance, man, boy"}
 
 Output only ONE square collage image.
 `;
